@@ -1,5 +1,5 @@
 "use client";
-import React, { use, useRef } from "react";
+import React, { use, useEffect, useRef } from "react";
 import Webcam from "react-webcam";
 
 const ObjectDetection = () => {
@@ -7,11 +7,18 @@ const ObjectDetection = () => {
      
      const showmyVideo = () => {
         if (webcamRef.current !== null && webcamRef.current.video?.readyState===4) {
-            const video = webcamRef.current.video;
-            const videoWidth = webcamRef.current.video.videoWidth;
-            const videoHeight = webcamRef.current.video.videoHeight;
-        };
+            const myVideoWidth = webcamRef.current.video.videoWidth;
+            const myVideoHeight = webcamRef.current.video.videoHeight;
 
+            webcamRef.current.video.width = myVideoWidth;
+            webcamRef.current.video.height = myVideoHeight;
+        };
+      };
+
+
+      useEffect(() => {
+        showmyVideo();
+      }, []);
   return (
     <div className="text-white mt-8">
       <div className="relative flex justify-center items-center gradient-border p-1.5 rounded-md"> 
