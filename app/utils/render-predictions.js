@@ -1,3 +1,5 @@
+import { throttle } from "lodash";
+
 export const renderPredictions = (predictions, ctx) => {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   
@@ -28,6 +30,16 @@ export const renderPredictions = (predictions, ctx) => {
       // Label text
       ctx.fillStyle = "white";
       ctx.fillText(prediction.class, x + 3, y + 3);
+
+      if (isPerson) {
+        playAudio();
+      }
     });
   };
+
+  const playAudio = throttle(() => {
+    const audio = new Audio('/alarm.mp3');
+    audio.play();
+  },2000); // Throttle to play at most once every 2 seconds
+
   
