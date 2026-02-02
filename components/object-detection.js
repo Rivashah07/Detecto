@@ -1,32 +1,77 @@
 "use client";
-import React, { use, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Webcam from "react-webcam";
+import { load as cocoSSDLoad } from "@tensorflow-models/coco-ssd";
+import * as tf from "@tensorflow/tfjs";
+import { renderPredictions } from "../utils/render-prediction";
+
+
+
+let detectInterval;
 
 const ObjectDetection = () => {
-    const webcamRef = useRef(null);
-     
-     const showmyVideo = () => {
-        if (webcamRef.current !== null && webcamRef.current.video?.readyState===4) {
-            const myVideoWidth = webcamRef.current.video.videoWidth;
-            const myVideoHeight = webcamRef.current.video.videoHeight;
+  const [isLoading, setIsLoading] = useState(true);
+  const webcamRef = useRef(null);
+  const canvasRef = useRef(null);
 
-            webcamRef.current.video.width = myVideoWidth;
-            webcamRef.current.video.height = myVideoHeight;
-        };
-      };
+  // Load COCO model
+  const runCoco = async () => {
+    const net = await cocoSSDLoad();
+    setIsLoading(false);
 
+    detectInterval = setInterval(() => {
+      runObjectDetection(net);
+    }, 100);
+  };
 
-      useEffect(() => {
-        showmyVideo();
-      }, []);
+  // Object detection logic
+  const runObjectDetection = async (net) => {
+    if (
+      webcamRef.current &&
+      webcamRef.current.video.readyState === 4 &&
+      canvasRef.current
+    ) {
+      const video = webcamRef.current.video;
+      const canvas = canvasRef.current;
+
+      // Match canvas size to video
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      const ctx = canvas.getContext("2d");
+
+      // Detect objects
+      const detectedObjects = await net.detect(video, undefined, 0.6);
+
+      // Draw predictions
+      renderPredictions(detectedObjects, ctx);
+    }
+  };
+
+  useEffect(() => {
+    runCoco();
+    return () => clearInterval(detectInterval);
+  }, []);
+
   return (
     <div className="text-white mt-8">
-      <div className="relative flex justify-center items-center gradient-border p-1.5 rounded-md"> 
-        {/* Webcam */}
-        <Webcam 
-        ref={webcamRef}
-        className="rounded-md w-full lg:h-[720px]" muted  /> 
-        {/* canvas */}
+      {isLoading && <div>Loading Model...</div>}
+
+      <div className="relative flex justify-center items-center">
+        {/* Webcam always mounted */}
+        <Webcam
+          ref={webcamRef}
+          muted
+          playsInline
+          className="rounded-md"
+          videoConstraints={{ facingMode: "environment" }}
+        />
+
+        {/* Canvas overlay */}
+        <canvas
+          ref={canvasRef}
+          className="absolute left-0 top-0"
+        />
       </div>
     </div>
   );
